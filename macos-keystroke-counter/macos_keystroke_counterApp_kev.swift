@@ -234,11 +234,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func handleKeyDownEvent(_ event: CGEvent) {
         keystrokeCount += 1;
         updateCount()
+        updateHistoryJson()
     }
     
     func handleMouseDownEvent(_ event: CGEvent) {
         mouseclickCount += 1
         updateCount()
+        updateHistoryJson()
     }
     
     func setupTimeIndexIncrementer() {
