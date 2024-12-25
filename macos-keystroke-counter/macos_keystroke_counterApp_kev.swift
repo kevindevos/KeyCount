@@ -35,57 +35,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     var mainWindow: NSWindow!
     static private(set) var instance: AppDelegate!
     lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    var updateInterval = Int(UserDefaults.standard.string(forKey: "updateInterval") ?? "30") ?? 30
-    
-    // Variables for maintaining keystroke data
-    var keystrokeData: [Int] = []
-    var currentTimeIndex: Int = 0
-    var endpointURL: String = ""
     
     // Store history data in a map
     let historyData: [String: HistoryEntry] = [:]
     let historyDataFileName = "keycount_history.json"
     
-    // The number of keystrokes at the beginning of the interval, so that when we send the data we can add the keystrokes from the leystroke data on to this value incrementally
-    var keystrokesAtBeginningOfInterval: Int = 0
-    
-    // how precise the key detection logic is. keystrokeData data will be an array of Integers where each Int represents the number of keystrokes that took place in each period. If updatePrecision = 4, then it will be the number of keystrokes in each 250ms period (4 periods per second)
-    var updatePrecision: Int = 20
-    
-    // keys for UserDefaults data
-    let sendingUpdatesEnabledKey = "sendingUpdatesEnabled"
-    let updateEndpointURIKey = "updateEndpointURI"
-    let updateIntervalKey = "updateInterval"
-    
-    private var currentDateKey: String {
-       let dateFormatter = DateFormatter()
-       dateFormatter.dateFormat = "yyyy-MM-dd"
-       return dateFormatter.string(from: Date())
-    }
-    
-    @Published var keystrokeCount: Int {
-        didSet {
-            UserDefaults.standard.set(keystrokeCount, forKey: "keystrokesToday")
-        }
-    }
-   
-    @Published var mouseclickCount: Int {
-        didSet {
-            UserDefaults.standard.set(mouseclickCount, forKey: "mouseclickCount")
-        }
-    }
+    @Published var keystrokeCount: Int 
+    @Published var mouseclickCount: Int
 
     private var keyEventTap: CFMachPort?
     private var mouseEventTap: CFMachPort?
     var menu: ApplicationMenu!
 
     override init() {
-        self.keystrokeCount = UserDefaults.standard.integer(forKey: "keystrokesToday")
-        self.keystrokesAtBeginningOfInterval = UserDefaults.standard.integer(forKey: "keystrokesToday")
-        self.endpointURL = UserDefaults.standard.string(forKey: updateEndpointURIKey) ?? ""
-        self.keystrokeData = Array(repeating: 0, count: updateInterval * updatePrecision)
-        self.mouseclickCount = UserDefaults.standard.integer(forKey: "mouseclickCount")
+        self.keystrokeCount = 0;
+        self.mouseclickCount = 0;
         super.init()
+        
+        var history = readHistoryJson();
+        var currentDateKey: String = getCurrentDateKey()
+        
+        if (history[currentDateKey] != nil) {
+            var todayEntry = history[currentDateKey]!;
+            
+            self.keystrokeCount = todayEntry.keystrokesCount;
+            self.mouseclickCount = todayEntry.mouseClicksCount;
+        }
+    }
+
+    func getCurrentDateKey() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd-MM-yyyy"
+        return dateFormatter.string(from: Date())
     }
     
     func getHistoryDataFilePath() -> String {
@@ -141,11 +122,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         
         // Register for mouse click events using event tap
         setupMouseClickEventTap()
-        
-        // If sending updates is enabled start timer to send update data after every interval
-        if UserDefaults.standard.bool(forKey: self.sendingUpdatesEnabledKey) {
-            setupTimeIndexIncrementer()
-        }
     }
     
     func updateCount() {
@@ -178,10 +154,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func updateHistoryJson() {
         var history = readHistoryJson();
         
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        
-        let currentDateKey = dateFormatter.string(from: Date())
+        let currentDateKey = getCurrentDateKey();
 
         // create today's entry
         let todayEntry = HistoryEntry(keystrokesCount: keystrokeCount, mouseClicksCount: mouseclickCount);
@@ -242,22 +215,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         mouseclickCount += 1
         updateCount()
         updateHistoryJson()
-    }
-    
-    func setupTimeIndexIncrementer() {
-        // Create a timer that calls the incrementTimeIndex method [updatePrecision] times per second
-        let timer = Timer.scheduledTimer(timeInterval: 1.0/Double(updatePrecision), target: self, selector: #selector(incrementTimeIndex), userInfo: nil, repeats: true)
-        
-        // Run the timer on the current run loop
-        RunLoop.current.add(timer, forMode: .common)
-    }
-    
-    @objc func incrementTimeIndex() {
-        // Increment currentTimeIndex
-        currentTimeIndex += 1
-        
-        // Uncommment print statement for timer increment debugging
-        // print("Timestamp: \(Date()) - Current Time Index: \(currentTimeIndex)")
     }
     
     func setupKeyDownEventTap() {
