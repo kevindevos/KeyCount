@@ -375,29 +375,7 @@ class ApplicationMenu: ObservableObject {
 
     func buildMenu() {
         menu = NSMenu()
-
-        let settingsItem = NSMenuItem(title: "Reset Keystrokes", action: #selector(resetKeystrokes), keyEquivalent: "")
-        settingsItem.target = self
-
-        menu.addItem(settingsItem)
-        menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "Quit", action: #selector(terminateApp), keyEquivalent: "q")
-    }
-
-    @objc func resetKeystrokes() {
-        let confirmResetAlert = NSAlert()
-        confirmResetAlert.messageText = "Reset Keystrokes"
-        confirmResetAlert.informativeText = "Are you sure you want to reset the keystrokes count?"
-        confirmResetAlert.addButton(withTitle: "Reset")
-        confirmResetAlert.addButton(withTitle: "Cancel")
-        confirmResetAlert.alertStyle = .warning
-
-        let response = confirmResetAlert.runModal()
-
-        if response == .alertFirstButtonReturn {
-            appDelegate.keystrokeCount = 0
-            appDelegate.updateCount()
-        }
     }
     
     @objc func terminateApp() {
