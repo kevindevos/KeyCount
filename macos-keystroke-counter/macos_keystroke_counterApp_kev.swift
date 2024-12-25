@@ -43,7 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     var endpointURL: String = ""
     
     // Store history data in a map
-    let historyData: [String: [HistoryEntry]] = [:]
+    let historyData: [String: HistoryEntry] = [:]
     let historyDataFileName = "keycount_history.json"
     
     // The number of keystrokes at the beginning of the interval, so that when we send the data we can add the keystrokes from the leystroke data on to this value incrementally
@@ -186,13 +186,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let todayEntry = HistoryEntry(keystrokesCount: keystrokeCount, mouseClicksCount: mouseclickCount);
 
         // add entry
-        history[currentDateKey] = [todayEntry];
+        history[currentDateKey] = todayEntry;
         
         // save new history
         saveHistoryJson(data: history);
     }
     
-    func saveHistoryJson(data: [String: [HistoryEntry]]) {
+    func saveHistoryJson(data: [String: HistoryEntry]) {
         let jsonEncoder = JSONEncoder()
         jsonEncoder.outputFormatting = [.prettyPrinted]
         
@@ -205,7 +205,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
     
-    func readHistoryJson() -> [String: [HistoryEntry]] {
+    func readHistoryJson() -> [String: HistoryEntry] {
         let jsonDecoder = JSONDecoder();
         let filePath = getHistoryDataFilePath()
 
@@ -215,7 +215,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         
         do {
             let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
-            let history = try jsonDecoder.decode([String: [HistoryEntry]].self, from: data)
+            let history = try jsonDecoder.decode([String: HistoryEntry].self, from: data)
             return history;
         } catch let error {
             print(error);
