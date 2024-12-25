@@ -75,7 +75,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    private var eventTap: CFMachPort?
+    private var keyEventTap: CFMachPort?
+    private var mouseEventTap: CFMachPort?
     var menu: ApplicationMenu!
 
     override init() {
@@ -265,7 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
 
-        eventTap = CGEvent.tapCreate(
+        keyEventTap = CGEvent.tapCreate(
             tap: .cgAnnotatedSessionEventTap,
             place: .tailAppendEventTap,
             options: .listenOnly,
@@ -282,10 +283,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             userInfo: selfPointer
         )
 
-        if let eventTap = eventTap {
-            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        if let keyEventTap = keyEventTap {
+            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, keyEventTap, 0)
             CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-            CGEvent.tapEnable(tap: eventTap, enable: true)
+            CGEvent.tapEnable(tap: keyEventTap, enable: true)
             CFRunLoopRun()
         }
     }
@@ -296,7 +297,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
 
-        eventTap = CGEvent.tapCreate(
+        mouseEventTap = CGEvent.tapCreate(
             tap: .cgAnnotatedSessionEventTap,
             place: .tailAppendEventTap,
             options: .listenOnly,
@@ -313,18 +314,20 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             userInfo: selfPointer
         )
 
-        if let eventTap = eventTap {
-            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+        if let mouseEventTap = mouseEventTap {
+            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, mouseEventTap, 0)
             CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-            CGEvent.tapEnable(tap: eventTap, enable: true)
+            CGEvent.tapEnable(tap: mouseEventTap, enable: true)
             CFRunLoopRun()
         }
     }
 
     @objc func terminateApp() {
-        UserDefaults.standard.synchronize()
-        if let eventTap = eventTap {
-            CGEvent.tapEnable(tap: eventTap, enable: false)
+        if let keyEventTap = keyEventTap {
+            CGEvent.tapEnable(tap: keyEventTap, enable: false)
+        }
+        if let mouseEventTap = mouseEventTap {
+            CGEvent.tapEnable(tap: mouseEventTap, enable: false)
         }
         NSApplication.shared.terminate(self)
     }
