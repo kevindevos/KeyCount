@@ -320,37 +320,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             CFRunLoopRun()
         }
     }
-    
-//    func setupEventTap(eventMask: CGEventMask, eventHandler: (CGEvent) -> Void) {
-//        let mask = CGEventMask(eventMask) | CGEventFlags.maskCommand.rawValue
-//
-//        let selfPointer = Unmanaged.passUnretained(eventHandler).toOpaque()
-//
-//        eventTap = CGEvent.tapCreate(
-//            tap: .cgAnnotatedSessionEventTap,
-//            place: .tailAppendEventTap,
-//            options: .listenOnly,
-//            eventsOfInterest: mask,
-//            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
-//                guard let refcon = refcon else {
-//                    return nil
-//                }
-//                
-//                // Call the event handler
-//                eventHandler(event);
-//
-//                return Unmanaged.passRetained(event)
-//            },
-//            userInfo: selfPointer
-//        )
-//
-//        if let eventTap = eventTap {
-//            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
-//            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-//            CGEvent.tapEnable(tap: eventTap, enable: true)
-//            CFRunLoopRun()
-//        }
-//    }
 
     @objc func terminateApp() {
         UserDefaults.standard.synchronize()
@@ -387,14 +356,4 @@ class ApplicationMenu: ObservableObject {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 5), in: button)
         }
     }
-}
-
-
-struct KeystrokeDataObject: Codable {
-    let timestamp: String
-    let intervalData: [Int]
-    let keystrokeCountBefore: Int
-    let keystrokeCountAfter: Int
-    let intervalLength: Int
-    let updatePrecision: Int
 }
