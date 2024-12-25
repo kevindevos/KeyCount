@@ -7,15 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		285A43152B0568720060A160 /* macos_keystroke_counterApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A43142B0568720060A160 /* macos_keystroke_counterApp.swift */; };
+		285A43152B0568720060A160 /* macos_keystroke_counterApp_kev.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A43142B0568720060A160 /* macos_keystroke_counterApp_kev.swift */; };
 		285A43192B0568780060A160 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 285A43182B0568780060A160 /* Assets.xcassets */; };
 		285A431C2B0568780060A160 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 285A431B2B0568780060A160 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2848C54F2B081B46007ECFF0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		285A43112B0568720060A160 /* macos-keystroke-counter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "macos-keystroke-counter.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		285A43142B0568720060A160 /* macos_keystroke_counterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macos_keystroke_counterApp.swift; sourceTree = "<group>"; };
+		285A43112B0568720060A160 /* macos-keystroke-counter-kev.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "macos-keystroke-counter-kev.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		285A43142B0568720060A160 /* macos_keystroke_counterApp_kev.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = macos_keystroke_counterApp_kev.swift; sourceTree = "<group>"; };
 		285A43182B0568780060A160 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		285A431B2B0568780060A160 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		285A431D2B0568780060A160 /* macos_keystroke_counter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = macos_keystroke_counter.entitlements; sourceTree = "<group>"; };
@@ -43,7 +43,7 @@
 		285A43122B0568720060A160 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				285A43112B0568720060A160 /* macos-keystroke-counter.app */,
+				285A43112B0568720060A160 /* macos-keystroke-counter-kev.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -52,7 +52,7 @@
 			isa = PBXGroup;
 			children = (
 				2848C54F2B081B46007ECFF0 /* Info.plist */,
-				285A43142B0568720060A160 /* macos_keystroke_counterApp.swift */,
+				285A43142B0568720060A160 /* macos_keystroke_counterApp_kev.swift */,
 				285A43182B0568780060A160 /* Assets.xcassets */,
 				285A431D2B0568780060A160 /* macos_keystroke_counter.entitlements */,
 				285A431A2B0568780060A160 /* Preview Content */,
@@ -71,9 +71,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		285A43102B0568720060A160 /* macos-keystroke-counter */ = {
+		285A43102B0568720060A160 /* macos-keystroke-counter-kev */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "macos-keystroke-counter" */;
+			buildConfigurationList = 285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "macos-keystroke-counter-kev" */;
 			buildPhases = (
 				285A430D2B0568720060A160 /* Sources */,
 				285A430E2B0568720060A160 /* Frameworks */,
@@ -83,9 +83,9 @@
 			);
 			dependencies = (
 			);
-			name = "macos-keystroke-counter";
+			name = "macos-keystroke-counter-kev";
 			productName = "macos-keystroke-tracker";
-			productReference = 285A43112B0568720060A160 /* macos-keystroke-counter.app */;
+			productReference = 285A43112B0568720060A160 /* macos-keystroke-counter-kev.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -103,7 +103,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 285A430C2B0568720060A160 /* Build configuration list for PBXProject "macos-keystroke-counter" */;
+			buildConfigurationList = 285A430C2B0568720060A160 /* Build configuration list for PBXProject "macos-keystroke-counter-kev" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -116,7 +116,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				285A43102B0568720060A160 /* macos-keystroke-counter */,
+				285A43102B0568720060A160 /* macos-keystroke-counter-kev */,
 			);
 		};
 /* End PBXProject section */
@@ -138,7 +138,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				285A43152B0568720060A160 /* macos_keystroke_counterApp.swift in Sources */,
+				285A43152B0568720060A160 /* macos_keystroke_counterApp_kev.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,25 +264,28 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "macos-keystroke-counter/macos_keystroke_counter.entitlements";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"macos-keystroke-counter/Preview Content\"";
-				DEVELOPMENT_TEAM = 26J8GV82Z2;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "macos-keystroke-counter/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = KeyCount;
+				INFOPLIST_KEY_CFBundleDisplayName = KeyCountKev;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.delvecchio.macos-keystroke-counter";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kevindevos.macos-keystroke-counter";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -294,25 +297,28 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "macos-keystroke-counter/macos_keystroke_counter.entitlements";
-				CODE_SIGN_STYLE = Automatic;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"macos-keystroke-counter/Preview Content\"";
-				DEVELOPMENT_TEAM = 26J8GV82Z2;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "macos-keystroke-counter/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = KeyCount;
+				INFOPLIST_KEY_CFBundleDisplayName = KeyCountKev;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.delvecchio.macos-keystroke-counter";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.kevindevos.macos-keystroke-counter";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -321,7 +327,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		285A430C2B0568720060A160 /* Build configuration list for PBXProject "macos-keystroke-counter" */ = {
+		285A430C2B0568720060A160 /* Build configuration list for PBXProject "macos-keystroke-counter-kev" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				285A431E2B0568780060A160 /* Debug */,
@@ -330,7 +336,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "macos-keystroke-counter" */ = {
+		285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "macos-keystroke-counter-kev" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				285A43212B0568780060A160 /* Debug */,

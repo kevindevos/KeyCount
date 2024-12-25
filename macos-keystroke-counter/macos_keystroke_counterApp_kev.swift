@@ -20,6 +20,16 @@ struct KeystrokeTrackerApp: App {
     }
 }
 
+class HistoryEntry: Encodable, Decodable {
+    var keystrokesCount: Int;
+    var mouseClicksCount: Int;
+    
+    init(keystrokesCount: Int, mouseClicksCount: Int) {
+        self.keystrokesCount = keystrokesCount;
+        self.mouseClicksCount = mouseClicksCount;
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     var activity: NSObjectProtocol?
     var mainWindow: NSWindow!
@@ -31,6 +41,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     var keystrokeData: [Int] = []
     var currentTimeIndex: Int = 0
     var endpointURL: String = ""
+    
+    // Store history data in a map
+    let historyData: [String: [HistoryEntry]] = [:]
+    let historyDataFileName = "keycount_history.json"
     
     // The number of keystrokes at the beginning of the interval, so that when we send the data we can add the keystrokes from the leystroke data on to this value incrementally
     var keystrokesAtBeginningOfInterval: Int = 0
@@ -49,24 +63,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
        return dateFormatter.string(from: Date())
     }
     
-    var clearKeystrokesDaily: Bool {
-        get {
-            UserDefaults.standard.bool(forKey: "clearKeystrokesDaily")
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: "clearKeystrokesDaily")
-        }
-    }
-
     @Published var keystrokeCount: Int {
         didSet {
             UserDefaults.standard.set(keystrokeCount, forKey: "keystrokesToday")
         }
     }
-
-    @Published var totalKeystrokes: Int {
+   
+    @Published var mouseclickCount: Int {
         didSet {
-            UserDefaults.standard.set(totalKeystrokes, forKey: "totalKeystrokes")
+            UserDefaults.standard.set(mouseclickCount, forKey: "mouseclickCount")
         }
     }
 
@@ -76,10 +81,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     override init() {
         self.keystrokeCount = UserDefaults.standard.integer(forKey: "keystrokesToday")
         self.keystrokesAtBeginningOfInterval = UserDefaults.standard.integer(forKey: "keystrokesToday")
-        self.totalKeystrokes = UserDefaults.standard.integer(forKey: "totalKeystrokes")
         self.endpointURL = UserDefaults.standard.string(forKey: updateEndpointURIKey) ?? ""
         self.keystrokeData = Array(repeating: 0, count: updateInterval * updatePrecision)
+        self.mouseclickCount = UserDefaults.standard.integer(forKey: "mouseclickCount")
         super.init()
+    }
+    
+    func getHistoryDataFilePath() -> String {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documentsDirectory.appendingPathComponent(historyDataFileName).path
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
@@ -92,12 +102,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             let fontSize: CGFloat = 14.0
             let font = NSFont.systemFont(ofSize: fontSize)
             button.font = font
-            updateKeystrokesCount()
+            updateCount()
+            updateHistoryJson()
 
             if let font = button.font {
                 let offset = -(font.capHeight - font.xHeight) / 2 + 1.0
                 button.attributedTitle = NSAttributedString(
-                    string: "\(keystrokeCount) keystrokes",
+                    string: "\(keystrokeCount) K  -  \(mouseclickCount) M",
                     attributes: [NSAttributedString.Key.baselineOffset: offset]
                 )
             }
@@ -125,7 +136,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         requestAccessibilityPermission()
 
         // Register for key events using event tap
-        setupEventTap()
+        setupKeyDownEventTap()
+        
+        // Register for mouse click events using event tap
+        setupMouseClickEventTap()
         
         // If sending updates is enabled start timer to send update data after every interval
         if UserDefaults.standard.bool(forKey: self.sendingUpdatesEnabledKey) {
@@ -133,9 +147,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
     
-    func updateKeystrokesCount() {
+    func updateCount() {
         if let button = statusItem.button {
-            let displayString = menu?.showNumbersOnly == true ? "\(keystrokeCount)" : "\(keystrokeCount) keystrokes"
+            let displayString = "\(keystrokeCount) K  -  \(mouseclickCount) M"
             
             button.title = displayString
 
@@ -159,7 +173,56 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             statusItem.length = minWidth
         }
     }
+    
+    func updateHistoryJson() {
+        var history = readHistoryJson();
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        let currentDateKey = dateFormatter.string(from: Date())
 
+        // create today's entry
+        let todayEntry = HistoryEntry(keystrokesCount: keystrokeCount, mouseClicksCount: mouseclickCount);
+
+        // add entry
+        history[currentDateKey] = [todayEntry];
+        
+        // save new history
+        saveHistoryJson(data: history);
+    }
+    
+    func saveHistoryJson(data: [String: [HistoryEntry]]) {
+        let jsonEncoder = JSONEncoder()
+        jsonEncoder.outputFormatting = [.prettyPrinted]
+        
+        do {
+            let dataJson = try jsonEncoder.encode(data)
+            let fileURL = URL(fileURLWithPath: getHistoryDataFilePath())
+            try dataJson.write(to: fileURL)
+        } catch let error {
+            print(error);
+        }
+    }
+    
+    func readHistoryJson() -> [String: [HistoryEntry]] {
+        let jsonDecoder = JSONDecoder();
+        let filePath = getHistoryDataFilePath()
+
+        if !FileManager.default.fileExists(atPath: filePath) {
+            return [:]
+        }
+        
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
+            let history = try jsonDecoder.decode([String: [HistoryEntry]].self, from: data)
+            return history;
+        } catch let error {
+            print(error);
+        }
+        
+        return [:];
+    }
 
     func requestAccessibilityPermission() {
         let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
@@ -168,28 +231,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    func handleEvent(_ event: CGEvent) {
-        keystrokeCount += 1
-        totalKeystrokes += 1
-        updateKeystrokesCount()
-
-        // Check if it's a new day
-        if clearKeystrokesDaily {
-            if let lastDate = UserDefaults.standard.string(forKey: "lastDate") {
-                if lastDate != currentDateKey {
-                    // Reset daily keystrokes count
-                    keystrokeCount = 0
-                    UserDefaults.standard.set(currentDateKey, forKey: "lastDate")
-
-                    // Store in keystroke history
-                    let keystrokesHistoryKey = "keystrokesHistory_\(currentDateKey)"
-                    let dailyKeystrokes = UserDefaults.standard.integer(forKey: "keystrokesToday")
-                    UserDefaults.standard.set(dailyKeystrokes, forKey: keystrokesHistoryKey)
-                }
-            } else {
-                UserDefaults.standard.set(currentDateKey, forKey: "lastDate")
-            }
-        }
+    func handleKeyDownEvent(_ event: CGEvent) {
+        keystrokeCount += 1;
+        updateCount()
+    }
+    
+    func handleMouseDownEvent(_ event: CGEvent) {
+        mouseclickCount += 1
+        updateCount()
     }
     
     func setupTimeIndexIncrementer() {
@@ -208,9 +257,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         // print("Timestamp: \(Date()) - Current Time Index: \(currentTimeIndex)")
     }
     
-    func setupEventTap() {
+    func setupKeyDownEventTap() {
         let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
-        let mask = CGEventMask(eventMask) | CGEventFlags.maskCommand.rawValue
+        let mask = CGEventMask(eventMask);
 
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
 
@@ -224,7 +273,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                     return nil
                 }
                 let appDelegate = Unmanaged<AppDelegate>.fromOpaque(refcon).takeUnretainedValue()
-                appDelegate.handleEvent(event)
+                appDelegate.handleKeyDownEvent(event)
 
                 return Unmanaged.passRetained(event)
             },
@@ -238,6 +287,68 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             CFRunLoopRun()
         }
     }
+    
+    func setupMouseClickEventTap() {
+        let eventMask: CGEventMask = (1 << CGEventType.leftMouseDown.rawValue) | (1 << CGEventType.rightMouseDown.rawValue)
+        let mask = CGEventMask(eventMask);
+
+        let selfPointer = Unmanaged.passUnretained(self).toOpaque()
+
+        eventTap = CGEvent.tapCreate(
+            tap: .cgAnnotatedSessionEventTap,
+            place: .tailAppendEventTap,
+            options: .listenOnly,
+            eventsOfInterest: mask,
+            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+                guard let refcon = refcon else {
+                    return nil
+                }
+                let appDelegate = Unmanaged<AppDelegate>.fromOpaque(refcon).takeUnretainedValue()
+                appDelegate.handleMouseDownEvent(event)
+
+                return Unmanaged.passRetained(event)
+            },
+            userInfo: selfPointer
+        )
+
+        if let eventTap = eventTap {
+            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+            CGEvent.tapEnable(tap: eventTap, enable: true)
+            CFRunLoopRun()
+        }
+    }
+    
+//    func setupEventTap(eventMask: CGEventMask, eventHandler: (CGEvent) -> Void) {
+//        let mask = CGEventMask(eventMask) | CGEventFlags.maskCommand.rawValue
+//
+//        let selfPointer = Unmanaged.passUnretained(eventHandler).toOpaque()
+//
+//        eventTap = CGEvent.tapCreate(
+//            tap: .cgAnnotatedSessionEventTap,
+//            place: .tailAppendEventTap,
+//            options: .listenOnly,
+//            eventsOfInterest: mask,
+//            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+//                guard let refcon = refcon else {
+//                    return nil
+//                }
+//                
+//                // Call the event handler
+//                eventHandler(event);
+//
+//                return Unmanaged.passRetained(event)
+//            },
+//            userInfo: selfPointer
+//        )
+//
+//        if let eventTap = eventTap {
+//            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+//            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+//            CGEvent.tapEnable(tap: eventTap, enable: true)
+//            CFRunLoopRun()
+//        }
+//    }
 
     @objc func terminateApp() {
         UserDefaults.standard.synchronize()
@@ -253,17 +364,10 @@ class ApplicationMenu: ObservableObject {
     var menu: NSMenu!
     var mainWindow: NSWindow?
     var settingsWindow: NSWindow?
-    @Published var showNumbersOnly: Bool = false {
-        didSet {
-            UserDefaults.standard.set(showNumbersOnly, forKey: "ShowNumbersOnly")
-            appDelegate.updateKeystrokesCount()
-        }
-    }
 
     init(mainWindow: NSWindow?, appDelegate: AppDelegate) {
         self.mainWindow = mainWindow
         self.appDelegate = appDelegate
-        self.showNumbersOnly = UserDefaults.standard.bool(forKey: "ShowNumbersOnly")
         buildMenu()
     }
 
@@ -273,16 +377,7 @@ class ApplicationMenu: ObservableObject {
         let settingsItem = NSMenuItem(title: "Reset Keystrokes", action: #selector(resetKeystrokes), keyEquivalent: "")
         settingsItem.target = self
 
-        let numbersOnlyItem = NSMenuItem(title: "Toggle Number Only", action: #selector(toggleShowNumbersOnly), keyEquivalent: "")
-        numbersOnlyItem.target = self
-        numbersOnlyItem.state = showNumbersOnly ? .on : .off
-
-        let websiteItem = NSMenuItem(title: "Website", action: #selector(goToWebsite), keyEquivalent: "")
-        websiteItem.target = self
-
         menu.addItem(settingsItem)
-        menu.addItem(numbersOnlyItem)
-        menu.addItem(websiteItem)
         menu.addItem(NSMenuItem.separator())
         menu.addItem(withTitle: "Quit", action: #selector(terminateApp), keyEquivalent: "q")
     }
@@ -299,20 +394,10 @@ class ApplicationMenu: ObservableObject {
 
         if response == .alertFirstButtonReturn {
             appDelegate.keystrokeCount = 0
-            appDelegate.updateKeystrokesCount()
+            appDelegate.updateCount()
         }
     }
-
-    @objc func goToWebsite() {
-        if let url = URL(string: "https://github.com/MarcusDelvecchio/macos-keystroke-counter") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-
-    @objc func toggleShowNumbersOnly() {
-        showNumbersOnly.toggle()
-    }
-
+    
     @objc func terminateApp() {
         NSApplication.shared.terminate(self)
     }
