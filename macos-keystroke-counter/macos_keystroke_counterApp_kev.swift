@@ -40,6 +40,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     let historyData: [String: HistoryEntry] = [:]
     let historyDataFileName = "keycount_history.json"
     
+    var currentDate: String;
+    
     @Published var keystrokeCount: Int 
     @Published var mouseclickCount: Int
 
@@ -50,20 +52,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     override init() {
         self.keystrokeCount = 0;
         self.mouseclickCount = 0;
-        super.init()
+        self.currentDate = "";
         
-        var history = readHistoryJson();
-        var currentDateKey: String = getCurrentDateKey()
+        super.init()
+
+        // get current date
+        self.currentDate = getCurrentDate();
+        
+        // load entry data from current date if exists
+        let todayEntry = getTodayEntry();
+        self.keystrokeCount = todayEntry.keystrokesCount;
+        self.mouseclickCount = todayEntry.mouseClicksCount;
+    }
+    
+    func getTodayEntry() -> HistoryEntry {
+        let history = readHistoryJson();
+        let currentDateKey: String = getCurrentDate()
         
         if (history[currentDateKey] != nil) {
-            var todayEntry = history[currentDateKey]!;
-            
-            self.keystrokeCount = todayEntry.keystrokesCount;
-            self.mouseclickCount = todayEntry.mouseClicksCount;
+            return history[currentDateKey]!;
+        } else {
+            return HistoryEntry(keystrokesCount: 0, mouseClicksCount: 0);
         }
     }
 
-    func getCurrentDateKey() -> String {
+    func getCurrentDate() -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd-MM-yyyy"
         return dateFormatter.string(from: Date())
@@ -84,7 +97,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             let fontSize: CGFloat = 14.0
             let font = NSFont.systemFont(ofSize: fontSize)
             button.font = font
-            updateCount()
+            updateDisplayCounter()
             updateHistoryJson()
 
             if let font = button.font {
@@ -124,7 +137,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         setupMouseClickEventTap()
     }
     
-    func updateCount() {
+    func updateDisplayCounter() {
         if let button = statusItem.button {
             let displayString = "\(keystrokeCount) K  -  \(mouseclickCount) M"
             
@@ -154,7 +167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func updateHistoryJson() {
         var history = readHistoryJson();
         
-        let currentDateKey = getCurrentDateKey();
+        let currentDateKey = getCurrentDate();
 
         // create today's entry
         let todayEntry = HistoryEntry(keystrokesCount: keystrokeCount, mouseClicksCount: mouseclickCount);
@@ -204,16 +217,30 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             print("Please enable accessibility permissions for the app.")
         }
     }
+    
+    func ensureTodayCounters() {
+        let date = getCurrentDate()
+        
+        if (self.currentDate != date) {
+            self.currentDate = date;
+            
+            let entry = getTodayEntry();
+            self.keystrokeCount = entry.keystrokesCount;
+            self.mouseclickCount = entry.mouseClicksCount;
+        }
+    }
 
     func handleKeyDownEvent(_ event: CGEvent) {
+        ensureTodayCounters();
         keystrokeCount += 1;
-        updateCount()
+        updateDisplayCounter()
         updateHistoryJson()
     }
     
     func handleMouseDownEvent(_ event: CGEvent) {
+        ensureTodayCounters();
         mouseclickCount += 1
-        updateCount()
+        updateDisplayCounter()
         updateHistoryJson()
     }
     
