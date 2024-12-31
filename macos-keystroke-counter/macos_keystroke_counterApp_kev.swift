@@ -139,12 +139,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
     func updateDisplayCounter() {
         if let button = statusItem.button {
-            let displayString = "\(keystrokeCount) K  -  \(mouseclickCount) M"
+            let displayString = "\(keystrokeCount) K - \(mouseclickCount) M"
             
             button.title = displayString
 
             // Calculate the minimum width based on the number of digits
-            var minWidth: CGFloat = 110.0
+            var minWidth: CGFloat = 150.0
             let digitCount = "\(keystrokeCount)".count
 
             if digitCount >= 4 {
