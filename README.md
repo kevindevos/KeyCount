@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="128" src="macos-keystroke-counter/Assets.xcassets/icon_512x512@2x.png">
+  <img width="128" src="AntiRSICounter/Assets.xcassets/icon_512x512@2x.png">
 </p>
 
 <h1 align="center">KeyCount</h1>
@@ -14,7 +14,7 @@
 
 ## Key features
 1. Count daily keystrokes and mouse clicks and display them in the macOS menu bar
-2. Saves keystroke and mouse click data to a local file with path `/Users/<USER>/Library/Containers/com.kevindevos.macos-keystroke-counter/Data/Documents` in json format.
+2. Saves keystroke and mouse click data to a local file with path `/Users/<USER>/Library/Containers/com.kevindevos.AntiRSICounter/Data/Documents` in json format.
 
 ## To run the app:
 1. Download the [latest release](https://github.com/kevindevos/KeyCount/releases#latest)
@@ -23,7 +23,7 @@
 ## Granting permissions
 This application requires your permission to receive events from macOS in order to count and display your keystrokes in the menu bar.
 
-On newer versions of macOS (10.15+) there is an Input Monitoring menu under Security & Privacy within the System Preferences app, and macos-keystroke-counter will appear there automatically the first time you run it. Simply unlock this menu and check the box next to macos-keystroke-counter to enable it.
+On newer versions of macOS (10.15+) there is an Input Monitoring menu under Security & Privacy within the System Preferences app, and AntiRSICounter will appear there automatically the first time you run it. Simply unlock this menu and check the box next to AntiRSICounter to enable it.
 
 ### Other
 Icon by Javier Aroche/ [via CC Liscence](https://creativecommons.org/licenses/by/4.0/)

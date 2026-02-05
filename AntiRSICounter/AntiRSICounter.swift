@@ -82,7 +82,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         return dateFormatter.string(from: Date())
     }
     
-
     func getHistoryDataFilePath() -> String {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return documentsDirectory.appendingPathComponent(historyDataFileName).path
@@ -100,6 +99,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             button.font = font
             updateDisplayCounter()
             updateHistoryJson()
+
+            if let font = button.font {
+                let offset = -(font.capHeight - font.xHeight) / 2 + 1.0
+                button.attributedTitle = NSAttributedString(
+                    string: "\(keystrokeCount) K  -  \(mouseclickCount) M",
+                    attributes: [NSAttributedString.Key.baselineOffset: offset]
+                )
+            }
         }
 
         // Create the main window but don't show it
@@ -109,7 +116,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             backing: .buffered,
             defer: true
         )
-        mainWindow.title = "RSICounter"
+        mainWindow.title = "AntiRSICounter"
         
         // Initialize ApplicationMenu only once
         menu = ApplicationMenu(mainWindow: mainWindow, appDelegate: self)
@@ -130,16 +137,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         setupMouseClickEventTap()
     }
     
-    func formatCount(_ count: Int) -> String {
-        let rounded = Double(count / 100) / 10.0
-        return String(format: "%.1f", rounded)
-    }
-    
     func updateDisplayCounter() {
         if let button = statusItem.button {
-            let keystrokeDisplay = formatCount(keystrokeCount)
-            let mouseclickDisplay = formatCount(mouseclickCount)
-            let displayString = "\(keystrokeDisplay)K \(mouseclickDisplay)M"
+            let displayString = "\(keystrokeCount) K - \(mouseclickCount) M"
+            
+            button.title = displayString
+
+            // Calculate the minimum width based on the number of digits
+            var minWidth: CGFloat = 150.0
+            let digitCount = "\(keystrokeCount)".count
+
+            if digitCount >= 4 {
+                minWidth += CGFloat(digitCount - 4) * 10.0
+            }
 
             if let font = button.font {
                 let offset = -(font.capHeight - font.xHeight) / 2 + 1.0
@@ -148,9 +158,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                     attributes: [NSAttributedString.Key.baselineOffset: offset]
                 )
             }
-            
-            // Let the system automatically size based on the content
-            statusItem.length = NSStatusItem.variableLength
+
+            // Set the minimum width
+            statusItem.length = minWidth
         }
     }
     
@@ -223,29 +233,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func handleKeyDownEvent(_ event: CGEvent) {
         ensureTodayCounters();
         keystrokeCount += 1;
-        
-        // Only update display every 10 keystrokes
-        if keystrokeCount % 10 == 0 {
-            updateDisplayCounter()
-        }
-        
+        updateDisplayCounter()
         updateHistoryJson()
     }
     
     func handleMouseDownEvent(_ event: CGEvent) {
         ensureTodayCounters();
         mouseclickCount += 1
-        
-        // Only update display every 10 mouse clicks
-        if mouseclickCount % 10 == 0 {
-            updateDisplayCounter()
-        }
-        
+        updateDisplayCounter()
         updateHistoryJson()
     }
     
     func setupKeyDownEventTap() {
-        let eventMask: CGEventMask = (1 << CGEventType.keyUp.rawValue)
+        let eventMask: CGEventMask = (1 << CGEventType.keyDown.rawValue)
         let mask = CGEventMask(eventMask);
 
         let selfPointer = Unmanaged.passUnretained(self).toOpaque()
