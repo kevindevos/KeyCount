@@ -131,6 +131,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
     
     func formatCount(_ count: Int) -> String {
+        return String(count)
         let rounded = Double(count / 100) / 10.0
         return String(format: "%.1f", rounded)
     }
@@ -140,16 +141,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             let keystrokeDisplay = formatCount(keystrokeCount)
             let mouseclickDisplay = formatCount(mouseclickCount)
             let displayString = "\(keystrokeDisplay)K \(mouseclickDisplay)M"
-            
-            button.title = displayString
-
-            // Calculate the minimum width based on the number of digits
-            var minWidth: CGFloat = 150.0
-            let digitCount = keystrokeDisplay.count
-
-            if digitCount >= 4 {
-                minWidth += CGFloat(digitCount - 4) * 10.0
-            }
 
             if let font = button.font {
                 let offset = -(font.capHeight - font.xHeight) / 2 + 1.0
@@ -159,8 +150,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 )
             }
 
-            // Set the minimum width
-            statusItem.length = minWidth
+            // Let the system automatically size based on content
+            statusItem.length = NSStatusItem.variableLength
         }
     }
     
@@ -239,22 +230,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         ensureTodayCounters();
         keystrokeCount += 1;
         
-        // Only update display every 100 keystrokes
-        if keystrokeCount % 100 == 0 {
-            updateDisplayCounter()
-            updateHistoryJson()
-        }
+        updateDisplayCounter()
+        updateHistoryJson()
     }
     
     func handleMouseDownEvent(_ event: CGEvent) {
         ensureTodayCounters();
         mouseclickCount += 1
         
-        // Only update display every 10 mouse clicks
-        if mouseclickCount % 10 == 0 {
-            updateDisplayCounter()
-            updateHistoryJson()
-        }
+        updateDisplayCounter()
+        updateHistoryJson()
     }
     
     func setupKeyUpEventTap() {
@@ -272,6 +257,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 guard let refcon = refcon else {
                     return nil
                 }
+                print("Key event detected")
                 let appDelegate = Unmanaged<AppDelegate>.fromOpaque(refcon).takeUnretainedValue()
                 appDelegate.handleKeyDownEvent(event)
 
