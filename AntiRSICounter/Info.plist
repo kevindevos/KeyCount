@@ -6,15 +6,5 @@
 	<string></string>
 	<key>NSAppSleepDisabled</key>
 	<true/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
-	<key>NSServices</key>
-	<array>
-		<dict/>
-		<dict/>
-	</array>
 </dict>
 </plist>

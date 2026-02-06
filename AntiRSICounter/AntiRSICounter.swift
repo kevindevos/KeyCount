@@ -1,5 +1,4 @@
 import SwiftUI
-import ApplicationServices
 
 @main
 struct KeystrokeTrackerApp: App {
@@ -45,8 +44,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @Published var keystrokeCount: Int 
     @Published var mouseclickCount: Int
 
-    private var keyEventTap: CFMachPort?
-    private var mouseEventTap: CFMachPort?
+    private var eventTap: CFMachPort?
+    private var runLoopSource: CFRunLoopSource?
+    private let historyQueue = DispatchQueue(label: "com.keycount.history", qos: .utility)
     var menu: ApplicationMenu!
 
     override init() {
@@ -78,12 +78,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     func getCurrentDate() -> String {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd-MM-yyyy"
+        dateFormatter.dateFormat = "yyyy-MM-dd"
         return dateFormatter.string(from: Date())
     }
     
 
-    func getHistoryDataFilePath() -> String {
+    func getHistoryFilePath() -> String {
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return documentsDirectory.appendingPathComponent(historyDataFileName).path
     }
@@ -120,14 +120,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         statusItem.menu = menu.menu
         statusItem.button?.action = #selector(menu.toggleMenu)
 
-        // Request accessibility permissions
-        requestAccessibilityPermission()
+        // Request Input Monitoring permissions
+        requestInputMonitoringPermission()
 
-        // Register for key events using event tap
-        setupKeyUpEventTap()
-        
-        // Register for mouse click events using event tap
-        setupMouseClickEventTap()
+        // Register for key and mouse events using CGEvent tap
+        setupEventTap()
     }
     
     func formatCount(_ count: Int) -> String {
@@ -176,7 +173,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         
         do {
             let dataJson = try jsonEncoder.encode(data)
-            let fileURL = URL(fileURLWithPath: getHistoryDataFilePath())
+            let fileURL = URL(fileURLWithPath: getHistoryFilePath())
             try dataJson.write(to: fileURL)
         } catch let error {
             print(error);
@@ -185,7 +182,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
     func readHistoryJson() -> [String: HistoryEntry] {
         let jsonDecoder = JSONDecoder();
-        let filePath = getHistoryDataFilePath()
+        let filePath = getHistoryFilePath()
 
         if !FileManager.default.fileExists(atPath: filePath) {
             return [:]
@@ -202,10 +199,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         return [:];
     }
 
-    func requestAccessibilityPermission() {
-        let options = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
-        if !AXIsProcessTrustedWithOptions(options) {
-            print("Please enable accessibility permissions for the app.")
+    func requestInputMonitoringPermission() {
+        // Check if Input Monitoring permission has been granted
+        let hasPermission = CGPreflightListenEventAccess()
+        
+        if hasPermission {
+            print("Input Monitoring permission has been granted")
+        } else {
+            print("Input Monitoring permission has NOT been granted")
+            let requested = CGRequestListenEventAccess()
+            print("Input Monitoring permission request issued: \(requested)")
+            print("The system will automatically prompt for Input Monitoring permission")
+            print("If prompted, grant access in System Settings → Privacy & Security → Input Monitoring")
         }
     }
     
@@ -221,94 +226,106 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    func handleKeyDownEvent(_ event: CGEvent) {
-        // Filter out key repeats (when key is held down)
-        if event.getIntegerValueField(.keyboardEventAutorepeat) != 0 {
+    func handleKeyEvent() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.ensureTodayCounters()
+            self.keystrokeCount += 1
+            
+            self.updateDisplayCounter()
+            self.updateHistoryJsonAsync()
+        }
+    }
+    
+    func handleMouseEvent() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.ensureTodayCounters()
+            self.mouseclickCount += 1
+            
+            self.updateDisplayCounter()
+            self.updateHistoryJsonAsync()
+        }
+    }
+    
+    func updateHistoryJsonAsync() {
+        let keystrokes = keystrokeCount
+        let mouseClicks = mouseclickCount
+        let currentDateKey = getCurrentDate()
+        historyQueue.async { [weak self] in
+            guard let self = self else { return }
+            var history = self.readHistoryJson()
+            history[currentDateKey] = HistoryEntry(keystrokesCount: keystrokes, mouseClicksCount: mouseClicks)
+            self.saveHistoryJson(data: history)
+        }
+    }
+    
+    func setupEventTap() {
+        if eventTap != nil {
+            return
+        }
+
+        let eventMask = (1 << CGEventType.keyDown.rawValue) |
+                       (1 << CGEventType.leftMouseDown.rawValue) |
+                       (1 << CGEventType.rightMouseDown.rawValue)
+        
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .listenOnly,
+            eventsOfInterest: CGEventMask(eventMask),
+            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+                guard let refcon = refcon else {
+                    return Unmanaged.passUnretained(event)
+                }
+                
+                let appDelegate = Unmanaged<AppDelegate>.fromOpaque(refcon).takeUnretainedValue()
+                
+                switch type {
+                case .keyDown:
+                    // Filter out key repeats
+                    let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+                    if !isRepeat {
+                        appDelegate.handleKeyEvent()
+                    }
+                case .leftMouseDown, .rightMouseDown:
+                    appDelegate.handleMouseEvent()
+                case .tapDisabledByTimeout, .tapDisabledByUserInput:
+                    appDelegate.reenableEventTap()
+                default:
+                    break
+                }
+                
+                return Unmanaged.passUnretained(event)
+            },
+            userInfo: Unmanaged.passUnretained(self).toOpaque()
+        ) else {
+            print("Failed to create event tap")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.setupEventTap()
+            }
             return
         }
         
-        ensureTodayCounters();
-        keystrokeCount += 1;
+        let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
+        CGEvent.tapEnable(tap: tap, enable: true)
         
-        updateDisplayCounter()
-        updateHistoryJson()
+        self.eventTap = tap
+        self.runLoopSource = runLoopSource
     }
-    
-    func handleMouseDownEvent(_ event: CGEvent) {
-        ensureTodayCounters();
-        mouseclickCount += 1
-        
-        updateDisplayCounter()
-        updateHistoryJson()
-    }
-    
-    func setupKeyUpEventTap() {
-        let eventMask: CGEventMask = (1 << CGEventType.keyUp.rawValue)
-        let mask = CGEventMask(eventMask);
 
-        let selfPointer = Unmanaged.passUnretained(self).toOpaque()
-
-        keyEventTap = CGEvent.tapCreate(
-            tap: .cgAnnotatedSessionEventTap,
-            place: .tailAppendEventTap,
-            options: .listenOnly,
-            eventsOfInterest: mask,
-            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
-                guard let refcon = refcon else {
-                    return nil
-                }
-                print("Key event detected")
-                let appDelegate = Unmanaged<AppDelegate>.fromOpaque(refcon).takeUnretainedValue()
-                appDelegate.handleKeyDownEvent(event)
-
-                return Unmanaged.passRetained(event)
-            },
-            userInfo: selfPointer
-        )
-
-        if let keyEventTap = keyEventTap {
-            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, keyEventTap, 0)
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-            CGEvent.tapEnable(tap: keyEventTap, enable: true)
-        }
-    }
-    
-    func setupMouseClickEventTap() {
-        let eventMask: CGEventMask = (1 << CGEventType.leftMouseDown.rawValue) | (1 << CGEventType.rightMouseDown.rawValue)
-        let mask = CGEventMask(eventMask);
-
-        let selfPointer = Unmanaged.passUnretained(self).toOpaque()
-
-        mouseEventTap = CGEvent.tapCreate(
-            tap: .cgAnnotatedSessionEventTap,
-            place: .tailAppendEventTap,
-            options: .listenOnly,
-            eventsOfInterest: mask,
-            callback: { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
-                guard let refcon = refcon else {
-                    return nil
-                }
-                let appDelegate = Unmanaged<AppDelegate>.fromOpaque(refcon).takeUnretainedValue()
-                appDelegate.handleMouseDownEvent(event)
-
-                return Unmanaged.passRetained(event)
-            },
-            userInfo: selfPointer
-        )
-
-        if let mouseEventTap = mouseEventTap {
-            let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, mouseEventTap, 0)
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-            CGEvent.tapEnable(tap: mouseEventTap, enable: true)
-        }
+    func reenableEventTap() {
+        guard let tap = eventTap else { return }
+        CGEvent.tapEnable(tap: tap, enable: true)
     }
 
     @objc func terminateApp() {
-        if let keyEventTap = keyEventTap {
-            CGEvent.tapEnable(tap: keyEventTap, enable: false)
+        if let tap = eventTap {
+            CGEvent.tapEnable(tap: tap, enable: false)
         }
-        if let mouseEventTap = mouseEventTap {
-            CGEvent.tapEnable(tap: mouseEventTap, enable: false)
+        if let source = runLoopSource {
+            CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
         }
         NSApplication.shared.terminate(self)
     }
