@@ -408,7 +408,7 @@ struct HistoryPopoverView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Anti RSI CounterThe ")
+            Text("Anti RSI Counter")
                 .font(.headline)
             DatePicker("", selection: $selectedDate, displayedComponents: .date)
                 .datePickerStyle(.graphical)
@@ -437,6 +437,10 @@ struct HistoryPopoverView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
+            Text(appVersionText())
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
             Spacer()
         }
         .padding(12)
@@ -482,5 +486,11 @@ struct HistoryPopoverView: View {
                 }
             }
         }
+    }
+
+    private func appVersionText() -> String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        return "Version \(version) (Build \(build))"
     }
 }
