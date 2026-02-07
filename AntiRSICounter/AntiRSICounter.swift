@@ -84,8 +84,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
 
     func getHistoryFilePath() -> String {
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsDirectory.appendingPathComponent(historyDataFileName).path
+        let appSupportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appFolderName = Bundle.main.bundleIdentifier ?? "KeyCount"
+        let appSupportFolder = appSupportDirectory.appendingPathComponent(appFolderName, isDirectory: true)
+
+        do {
+            try FileManager.default.createDirectory(at: appSupportFolder, withIntermediateDirectories: true)
+        } catch {
+            print("Failed to create Application Support folder: \(error)")
+        }
+        
+        return appSupportFolder.appendingPathComponent(historyDataFileName).path
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
