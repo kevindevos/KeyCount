@@ -48,6 +48,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private var runLoopSource: CFRunLoopSource?
     private let historyQueue = DispatchQueue(label: "com.keycount.history", qos: .utility)
     var menu: ApplicationMenu!
+    private let popover = NSPopover()
 
     override init() {
         self.keystrokeCount = 0;
@@ -126,8 +127,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         // Create the menu
         menu.buildMenu()
 
-        statusItem.menu = menu.menu
-        statusItem.button?.action = #selector(menu.toggleMenu)
+        statusItem.menu = nil
+        setupPopover()
+        statusItem.button?.target = self
+        statusItem.button?.action = #selector(handleStatusItemClick)
+        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
         // Request Input Monitoring permissions
         requestInputMonitoringPermission()
@@ -135,9 +139,31 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         // Register for key and mouse events using CGEvent tap
         setupEventTap()
     }
+
+    func setupPopover() {
+        popover.behavior = .transient
+        let controller = NSHostingController(rootView: HistoryPopoverView(appDelegate: self))
+        popover.contentViewController = controller
+        controller.view.layoutSubtreeIfNeeded()
+        popover.contentSize = controller.view.fittingSize
+    }
+
+    @objc func handleStatusItemClick() {
+        guard let button = statusItem.button else { return }
+        guard let event = NSApp.currentEvent else { return }
+        if event.type == .rightMouseUp || event.type == .rightMouseDown {
+            menu.menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 5), in: button)
+            return
+        }
+
+        if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
     
     func formatCount(_ count: Int) -> String {
-        return String(count)
         let rounded = Double(count / 100) / 10.0
         return String(format: "%.1f", rounded)
     }
@@ -364,6 +390,97 @@ class ApplicationMenu: ObservableObject {
     @objc func toggleMenu() {
         if let button = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength).button {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 5), in: button)
+        }
+    }
+}
+
+struct HistoryPopoverView: View {
+    @ObservedObject var appDelegate: AppDelegate
+    @State private var selectedDate = Date()
+    @State private var keystrokes = 0
+    @State private var mouseClicks = 0
+
+    private let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Anti RSI CounterThe ")
+                .font(.headline)
+            DatePicker("", selection: $selectedDate, displayedComponents: .date)
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Keystrokes")
+                    Spacer()
+                    Text("\(keystrokes)")
+                        .monospacedDigit()
+                }
+                HStack {
+                    Text("Mouse clicks")
+                    Spacer()
+                    Text("\(mouseClicks)")
+                        .monospacedDigit()
+                }
+            }
+            HStack(spacing: 8) {
+                Button("Export") {
+                    exportSelectedDate()
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                Button("Quit") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            Spacer()
+        }
+        .padding(12)
+        .onAppear { loadCounts(for: selectedDate) }
+        .onChange(of: selectedDate) { newDate in
+            loadCounts(for: newDate)
+        }
+    }
+
+    private func loadCounts(for date: Date) {
+        let key = dateFormatter.string(from: date)
+        let history = appDelegate.readHistoryJson()
+        if let entry = history[key] {
+            keystrokes = entry.keystrokesCount
+            mouseClicks = entry.mouseClicksCount
+        } else {
+            keystrokes = 0
+            mouseClicks = 0
+        }
+    }
+
+    private func exportSelectedDate() {
+        let history = appDelegate.readHistoryJson()
+
+        let panel = NSSavePanel()
+        panel.allowedFileTypes = ["json"]
+        let timestampFormatter = DateFormatter()
+        timestampFormatter.dateFormat = "yyyyMMdd_HHmmss"
+        let timestamp = timestampFormatter.string(from: Date())
+        panel.nameFieldStringValue = "keycount_history_\(timestamp).json"
+
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            panel.begin { response in
+                guard response == .OK, let url = panel.url else { return }
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted]
+                do {
+                    let data = try encoder.encode(history)
+                    try data.write(to: url)
+                } catch {
+                    print("Failed to export history: \(error)")
+                }
+            }
         }
     }
 }
