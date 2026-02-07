@@ -410,9 +410,7 @@ struct HistoryPopoverView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Anti RSI Counter")
                 .font(.headline)
-            DatePicker("", selection: $selectedDate, displayedComponents: .date)
-                .datePickerStyle(.graphical)
-                .labelsHidden()
+            GraphicalDatePicker(selection: $selectedDate)
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text("Keystrokes")
@@ -492,5 +490,41 @@ struct HistoryPopoverView: View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "Version \(version) (Build \(build))"
+    }
+}
+
+struct GraphicalDatePicker: NSViewRepresentable {
+    @Binding var selection: Date
+
+    func makeNSView(context: Context) -> NSDatePicker {
+        let picker = NSDatePicker()
+        picker.datePickerStyle = .clockAndCalendar
+        picker.datePickerElements = .yearMonthDay
+        picker.isBordered = false
+        picker.focusRingType = .none
+        picker.drawsBackground = false
+        picker.target = context.coordinator
+        picker.action = #selector(Coordinator.dateChanged(_:))
+        return picker
+    }
+
+    func updateNSView(_ nsView: NSDatePicker, context: Context) {
+        nsView.dateValue = selection
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(selection: $selection)
+    }
+
+    class Coordinator: NSObject {
+        @Binding var selection: Date
+
+        init(selection: Binding<Date>) {
+            _selection = selection
+        }
+
+        @objc func dateChanged(_ sender: NSDatePicker) {
+            selection = sender.dateValue
+        }
     }
 }
