@@ -98,6 +98,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        // Prevent running as root for security
+        if getuid() == 0 {
+            let alert = NSAlert()
+            alert.messageText = "Security Warning"
+            alert.informativeText = "This application should not be run as root. Please run as a normal user."
+            alert.alertStyle = .critical
+            alert.runModal()
+            NSApplication.shared.terminate(nil)
+            return
+        }
+
         // Disable App Nap
         activity = ProcessInfo.processInfo.beginActivity(options: .userInitiatedAllowingIdleSystemSleep, reason: "Application counts user input data in the background")
         
@@ -213,9 +224,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             do {
                 let dataJson = try jsonEncoder.encode(data)
                 let fileURL = URL(fileURLWithPath: self.getHistoryFilePath())
-                try dataJson.write(to: fileURL)
-            } catch let error {
-                print(error)
+                try dataJson.write(to: fileURL, options: .atomic)
+            } catch {
+                print("Failed to save history: \(error.localizedDescription)")
+                print("Path: \(self.getHistoryFilePath())")
+                // App continues to function with in-memory counts even if file save fails
             }
         }
     }
@@ -233,11 +246,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
                 let history = try jsonDecoder.decode([String: HistoryEntry].self, from: data)
                 return history
-            } catch let error {
-                print(error)
+            } catch {
+                print("Failed to read history: \(error.localizedDescription)")
+                print("Path: \(filePath)")
+                
+                // If file is corrupted, attempt to rename it and start fresh
+                do {
+                    let corruptedPath = filePath + ".corrupted.\(Date().timeIntervalSince1970)"
+                    try FileManager.default.moveItem(atPath: filePath, toPath: corruptedPath)
+                    print("Moved corrupted file to: \(corruptedPath)")
+                } catch {
+                    print("Failed to move corrupted file: \(error.localizedDescription)")
+                }
+                
+                // Return empty dictionary - app will start fresh
+                return [:]
             }
-            
-            return [:]
         }
     }
 
@@ -477,7 +501,7 @@ struct HistoryPopoverView: View {
             }
         }
         .sheet(isPresented: $showExportSheet) {
-            ExportJsonView(jsonString: exportJson, isPresented: $showExportSheet)
+            ExportJsonView(jsonString: $exportJson, isPresented: $showExportSheet)
         }
     }
 
@@ -528,7 +552,7 @@ struct HistoryPopoverView: View {
 }
 
 struct ExportJsonView: View {
-    let jsonString: String
+    @Binding var jsonString: String
     @Binding var isPresented: Bool
 
     var body: some View {
