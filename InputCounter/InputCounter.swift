@@ -50,6 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private let popover = NSPopover()
     private var exportWindow: NSWindow?
     private var popoverMonitor: Any?
+    private var exportWindowMonitor: Any?
 
     override init() {
         self.keystrokeCount = 0;
@@ -168,6 +169,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let exportView = ExportJsonView(jsonString: jsonString, onClose: { [weak self] in
             self?.exportWindow?.close()
             self?.exportWindow = nil
+            if let monitor = self?.exportWindowMonitor {
+                NSEvent.removeMonitor(monitor)
+                self?.exportWindowMonitor = nil
+            }
         })
         
         let hostingController = NSHostingController(rootView: exportView)
@@ -186,13 +191,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         window.center()
         window.makeKeyAndOrderFront(nil)
         
+        // Remove old monitor if exists
+        if let monitor = exportWindowMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        
         // Close on outside click by monitoring click events
-        NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak window] event in
+        exportWindowMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self, weak window] event in
             if let window = window, window.isVisible {
                 let windowFrame = window.frame
                 let clickLocation = NSEvent.mouseLocation
                 if !windowFrame.contains(clickLocation) {
                     window.close()
+                    if let monitor = self?.exportWindowMonitor {
+                        NSEvent.removeMonitor(monitor)
+                        self?.exportWindowMonitor = nil
+                    }
                 }
             }
             return event
@@ -355,11 +369,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let date = getCurrentDate()
         
         if (self.currentDate != date) {
-            self.currentDate = date;
+            // Save yesterday's counts before switching to new day
+            updateHistoryJson()
             
-            let entry = getTodayEntry();
-            self.keystrokeCount = entry.keystrokesCount;
-            self.mouseclickCount = entry.mouseClicksCount;
+            self.currentDate = date
+            
+            let entry = getTodayEntry()
+            self.keystrokeCount = entry.keystrokesCount
+            self.mouseclickCount = entry.mouseClicksCount
+            
+            updateDisplayCounter()
         }
     }
 
@@ -370,7 +389,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             self.keystrokeCount += 1
             
             self.updateDisplayCounter()
-            self.updateHistoryJsonAsync()
+            
+            // Save to file every 50 events
+            let totalCount = self.keystrokeCount + self.mouseclickCount
+            if totalCount % 50 == 0 {
+                self.updateHistoryJsonAsync()
+            }
         }
     }
     
@@ -381,7 +405,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             self.mouseclickCount += 1
             
             self.updateDisplayCounter()
-            self.updateHistoryJsonAsync()
+            
+            // Save to file every 50 events
+            let totalCount = self.keystrokeCount + self.mouseclickCount
+            if totalCount % 50 == 0 {
+                self.updateHistoryJsonAsync()
+            }
         }
     }
     
@@ -455,6 +484,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     @objc func terminateApp() {
+        // Save current counts before terminating
+        updateHistoryJson()
+        
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
         }
@@ -464,6 +496,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         if let monitor = popoverMonitor {
             NSEvent.removeMonitor(monitor)
             popoverMonitor = nil
+        }
+        if let monitor = exportWindowMonitor {
+            NSEvent.removeMonitor(monitor)
+            exportWindowMonitor = nil
+        }
+        if let activity = activity {
+            ProcessInfo.processInfo.endActivity(activity)
+            self.activity = nil
         }
         NSApplication.shared.terminate(self)
     }
