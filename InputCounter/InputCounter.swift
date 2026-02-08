@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 struct KeystrokeTrackerApp: App {
@@ -35,8 +36,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     static private(set) var instance: AppDelegate!
     lazy var statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     
-    // Store history data in a map
-    let historyData: [String: HistoryEntry] = [:]
     let historyDataFileName = "keycount_history.json"
     
     var currentDate: String;
@@ -207,35 +206,39 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
     
     func saveHistoryJson(data: [String: HistoryEntry]) {
-        let jsonEncoder = JSONEncoder()
-        jsonEncoder.outputFormatting = [.prettyPrinted]
-        
-        do {
-            let dataJson = try jsonEncoder.encode(data)
-            let fileURL = URL(fileURLWithPath: getHistoryFilePath())
-            try dataJson.write(to: fileURL)
-        } catch let error {
-            print(error);
+        historyQueue.async {
+            let jsonEncoder = JSONEncoder()
+            jsonEncoder.outputFormatting = [.prettyPrinted]
+            
+            do {
+                let dataJson = try jsonEncoder.encode(data)
+                let fileURL = URL(fileURLWithPath: self.getHistoryFilePath())
+                try dataJson.write(to: fileURL)
+            } catch let error {
+                print(error)
+            }
         }
     }
     
     func readHistoryJson() -> [String: HistoryEntry] {
-        let jsonDecoder = JSONDecoder();
-        let filePath = getHistoryFilePath()
+        return historyQueue.sync {
+            let jsonDecoder = JSONDecoder()
+            let filePath = getHistoryFilePath()
 
-        if !FileManager.default.fileExists(atPath: filePath) {
+            if !FileManager.default.fileExists(atPath: filePath) {
+                return [:]
+            }
+            
+            do {
+                let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
+                let history = try jsonDecoder.decode([String: HistoryEntry].self, from: data)
+                return history
+            } catch let error {
+                print(error)
+            }
+            
             return [:]
         }
-        
-        do {
-            let data = try Data(contentsOf: URL(fileURLWithPath: filePath))
-            let history = try jsonDecoder.decode([String: HistoryEntry].self, from: data)
-            return history;
-        } catch let error {
-            print(error);
-        }
-        
-        return [:];
     }
 
     func requestInputMonitoringPermission() {
@@ -291,12 +294,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let keystrokes = keystrokeCount
         let mouseClicks = mouseclickCount
         let currentDateKey = getCurrentDate()
-        historyQueue.async { [weak self] in
-            guard let self = self else { return }
-            var history = self.readHistoryJson()
-            history[currentDateKey] = HistoryEntry(keystrokesCount: keystrokes, mouseClicksCount: mouseClicks)
-            self.saveHistoryJson(data: history)
-        }
+        var history = self.readHistoryJson()
+        history[currentDateKey] = HistoryEntry(keystrokesCount: keystrokes, mouseClicksCount: mouseClicks)
+        self.saveHistoryJson(data: history)
     }
     
     func setupEventTap() {
@@ -388,7 +388,7 @@ class ApplicationMenu: ObservableObject {
     }
     
     @objc func terminateApp() {
-        NSApplication.shared.terminate(self)
+        appDelegate.terminateApp()
     }
 
     @objc func toggleMenu() {
@@ -403,6 +403,8 @@ struct HistoryPopoverView: View {
     @State private var selectedDate = Date()
     @State private var keystrokes = 0
     @State private var mouseClicks = 0
+    @State private var showExportSheet = false
+    @State private var exportJson = ""
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -464,6 +466,19 @@ struct HistoryPopoverView: View {
         .onChange(of: selectedDate) { newDate in
             loadCounts(for: newDate)
         }
+        .onChange(of: appDelegate.keystrokeCount) { newCount in
+            if isToday(selectedDate) {
+                keystrokes = newCount
+            }
+        }
+        .onChange(of: appDelegate.mouseclickCount) { newCount in
+            if isToday(selectedDate) {
+                mouseClicks = newCount
+            }
+        }
+        .sheet(isPresented: $showExportSheet) {
+            ExportJsonView(jsonString: exportJson, isPresented: $showExportSheet)
+        }
     }
 
     private func loadCounts(for date: Date) {
@@ -478,30 +493,23 @@ struct HistoryPopoverView: View {
         }
     }
 
+    private func isToday(_ date: Date) -> Bool {
+        let today = dateFormatter.string(from: Date())
+        let selected = dateFormatter.string(from: date)
+        return today == selected
+    }
+
     private func exportSelectedDate() {
         let history = appDelegate.readHistoryJson()
-
-        let panel = NSSavePanel()
-        panel.allowedFileTypes = ["json"]
-        let timestampFormatter = DateFormatter()
-        timestampFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = timestampFormatter.string(from: Date())
-        panel.nameFieldStringValue = "keycount_history_\(timestamp).json"
-
-        DispatchQueue.main.async {
-            NSApp.activate(ignoringOtherApps: true)
-            panel.begin { response in
-                guard response == .OK, let url = panel.url else { return }
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = [.prettyPrinted]
-                do {
-                    let data = try encoder.encode(history)
-                    try data.write(to: url)
-                } catch {
-                    print("Failed to export history: \(error)")
-                }
-            }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        do {
+            let data = try encoder.encode(history)
+            exportJson = String(data: data, encoding: .utf8) ?? "Error encoding JSON"
+        } catch {
+            exportJson = "Error: \(error.localizedDescription)"
         }
+        showExportSheet = true
     }
 
     private func appVersionText() -> String {
@@ -516,6 +524,39 @@ struct HistoryPopoverView: View {
 
     private func generalDisclaimerText() -> String {
         return "This app provides activity metrics for informational purposes only. It is not a medical device and should not be used for medical diagnosis or treatment. Always consult with a qualified healthcare professional for any medical concerns."
+    }
+}
+
+struct ExportJsonView: View {
+    let jsonString: String
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("Export History")
+                .font(.headline)
+            ScrollView {
+                Text(jsonString)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+            }
+            .frame(minHeight: 200, maxHeight: 300)
+            .background(Color(nsColor: .textBackgroundColor))
+            .cornerRadius(6)
+            HStack(spacing: 12) {
+                Button("Copy to Clipboard") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(jsonString, forType: .string)
+                }
+                Button("Close") {
+                    isPresented = false
+                }
+            }
+        }
+        .padding()
+        .frame(width: 400)
     }
 }
 

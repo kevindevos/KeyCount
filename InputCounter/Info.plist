@@ -4,7 +4,9 @@
 <dict>
 	<key>CFBundleGetInfoString</key>
 	<string></string>
-	<key>NSAppSleepDisabled</key>
+	<key>LSUIElement</key>
 	<true/>
+	<key>NSInputMonitoringUsageDescription</key>
+	<string>Only counts keystrokes and mouse clicks to display daily totals in the menu bar. No key content is ever accessed, recorded or sent off-device. The app code is open source and can be verified by anyone for transparency.</string>
 </dict>
 </plist>
