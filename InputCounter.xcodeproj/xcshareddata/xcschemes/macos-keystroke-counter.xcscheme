@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "285A43102B0568720060A160"
-               BuildableName = "AntiRSICounter.app"
-               BlueprintName = "AntiRSICounter"
-               ReferencedContainer = "container:AntiRSICounter.xcodeproj">
+               BuildableName = "InputCounter.app"
+               BlueprintName = "InputCounter"
+               ReferencedContainer = "container:InputCounter.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "285A43102B0568720060A160"
-            BuildableName = "AntiRSICounter.app"
-            BlueprintName = "AntiRSICounter"
-            ReferencedContainer = "container:AntiRSICounter.xcodeproj">
+            BuildableName = "InputCounter.app"
+            BlueprintName = "InputCounter"
+            ReferencedContainer = "container:InputCounter.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "285A43102B0568720060A160"
-            BuildableName = "AntiRSICounter.app"
-            BlueprintName = "AntiRSICounter"
-            ReferencedContainer = "container:AntiRSICounter.xcodeproj">
+            BuildableName = "InputCounter.app"
+            BlueprintName = "InputCounter"
+            ReferencedContainer = "container:InputCounter.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

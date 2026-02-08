@@ -142,10 +142,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     func setupPopover() {
         popover.behavior = .transient
-        let controller = NSHostingController(rootView: HistoryPopoverView(appDelegate: self))
+        let maxWidth: CGFloat = 160
+        let rootView = HistoryPopoverView(appDelegate: self).frame(width: maxWidth)
+        let controller = NSHostingController(rootView: rootView)
         popover.contentViewController = controller
+        controller.view.setFrameSize(NSSize(width: maxWidth, height: 1))
         controller.view.layoutSubtreeIfNeeded()
-        popover.contentSize = controller.view.fittingSize
+        let targetHeight = controller.view.fittingSize.height
+        popover.contentSize = NSSize(width: maxWidth, height: targetHeight)
     }
 
     @objc func handleStatusItemClick() {
@@ -408,7 +412,7 @@ struct HistoryPopoverView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Anti RSI Counter")
+            Text("Input Counter")
                 .font(.headline)
             GraphicalDatePicker(selection: $selectedDate)
             VStack(alignment: .leading, spacing: 6) {
@@ -435,6 +439,20 @@ struct HistoryPopoverView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
+            Text(privacyDisclaimerText())
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .allowsTightening(true)
+            Text(generalDisclaimerText())
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+                .allowsTightening(true)
             Text(appVersionText())
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -490,6 +508,14 @@ struct HistoryPopoverView: View {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "Version \(version) (Build \(build))"
+    }
+
+    private func privacyDisclaimerText() -> String {
+        return "This app only keeps keystroke and mouse click counters locally. It does not know which keys are pressed. No data is collected or transmitted through the network. The code is open source and can be reviewed by anyone for transparency."
+    }
+
+    private func generalDisclaimerText() -> String {
+        return "This app provides activity metrics for informational purposes only. It is not a medical device and should not be used for medical diagnosis or treatment. Always consult with a qualified healthcare professional for any medical concerns."
     }
 }
 

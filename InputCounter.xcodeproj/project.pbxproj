@@ -7,18 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		285A43152B0568720060A160 /* AntiRSICounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A43142B0568720060A160 /* AntiRSICounter.swift */; };
+		285A43152B0568720060A160 /* InputCounter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 285A43142B0568720060A160 /* InputCounter.swift */; };
 		285A43192B0568780060A160 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 285A43182B0568780060A160 /* Assets.xcassets */; };
 		285A431C2B0568780060A160 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 285A431B2B0568780060A160 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		2848C54F2B081B46007ECFF0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		285A43112B0568720060A160 /* AntiRSICounter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AntiRSICounter.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		285A43142B0568720060A160 /* AntiRSICounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntiRSICounter.swift; sourceTree = "<group>"; };
+		285A43112B0568720060A160 /* InputCounter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InputCounter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		285A43142B0568720060A160 /* InputCounter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputCounter.swift; sourceTree = "<group>"; };
 		285A43182B0568780060A160 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		285A431B2B0568780060A160 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		285A431D2B0568780060A160 /* AntiRSICounter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AntiRSICounter.entitlements; sourceTree = "<group>"; };
+		285A431D2B0568780060A160 /* InputCounter.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = InputCounter.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,7 +35,7 @@
 		285A43082B0568720060A160 = {
 			isa = PBXGroup;
 			children = (
-				285A43132B0568720060A160 /* AntiRSICounter */,
+				285A43132B0568720060A160 /* InputCounter */,
 				285A43122B0568720060A160 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,21 +43,21 @@
 		285A43122B0568720060A160 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				285A43112B0568720060A160 /* AntiRSICounter.app */,
+				285A43112B0568720060A160 /* InputCounter.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		285A43132B0568720060A160 /* AntiRSICounter */ = {
+		285A43132B0568720060A160 /* InputCounter */ = {
 			isa = PBXGroup;
 			children = (
 				2848C54F2B081B46007ECFF0 /* Info.plist */,
-				285A43142B0568720060A160 /* AntiRSICounter.swift */,
+				285A43142B0568720060A160 /* InputCounter.swift */,
 				285A43182B0568780060A160 /* Assets.xcassets */,
-				285A431D2B0568780060A160 /* AntiRSICounter.entitlements */,
+				285A431D2B0568780060A160 /* InputCounter.entitlements */,
 				285A431A2B0568780060A160 /* Preview Content */,
 			);
-			path = AntiRSICounter;
+			path = InputCounter;
 			sourceTree = "<group>";
 		};
 		285A431A2B0568780060A160 /* Preview Content */ = {
@@ -71,9 +71,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		285A43102B0568720060A160 /* AntiRSICounter */ = {
+		285A43102B0568720060A160 /* InputCounter */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "AntiRSICounter" */;
+			buildConfigurationList = 285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "InputCounter" */;
 			buildPhases = (
 				285A430D2B0568720060A160 /* Sources */,
 				285A430E2B0568720060A160 /* Frameworks */,
@@ -83,9 +83,9 @@
 			);
 			dependencies = (
 			);
-			name = AntiRSICounter;
-			productName = "AntiRSICounter-tracker";
-			productReference = 285A43112B0568720060A160 /* AntiRSICounter.app */;
+			name = InputCounter;
+			productName = "InputCounter-tracker";
+			productReference = 285A43112B0568720060A160 /* InputCounter.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -103,7 +103,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 285A430C2B0568720060A160 /* Build configuration list for PBXProject "AntiRSICounter" */;
+			buildConfigurationList = 285A430C2B0568720060A160 /* Build configuration list for PBXProject "InputCounter" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -116,7 +116,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				285A43102B0568720060A160 /* AntiRSICounter */,
+				285A43102B0568720060A160 /* InputCounter */,
 			);
 		};
 /* End PBXProject section */
@@ -138,7 +138,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				285A43152B0568720060A160 /* AntiRSICounter.swift in Sources */,
+				285A43152B0568720060A160 /* InputCounter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,16 +263,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AntiRSICounter/AntiRSICounter.entitlements;
+				CODE_SIGN_ENTITLEMENTS = InputCounter/InputCounter.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"AntiRSICounter/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"InputCounter/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CDU3P426;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = AntiRSICounter/Info.plist;
+				INFOPLIST_FILE = InputCounter/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = KeyCountKev;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -282,7 +282,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kevindevos.AntiRSICounter;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevindevos.InputCounter;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
@@ -296,16 +296,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AntiRSICounter/AntiRSICounter.entitlements;
+				CODE_SIGN_ENTITLEMENTS = InputCounter/InputCounter.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"AntiRSICounter/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"InputCounter/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CDU3P426;
 				ENABLE_HARDENED_RUNTIME = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = AntiRSICounter/Info.plist;
+				INFOPLIST_FILE = InputCounter/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RSICounter;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -315,7 +315,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kevindevos.AntiRSICounter;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kevindevos.InputCounter;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
@@ -327,7 +327,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		285A430C2B0568720060A160 /* Build configuration list for PBXProject "AntiRSICounter" */ = {
+		285A430C2B0568720060A160 /* Build configuration list for PBXProject "InputCounter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				285A431E2B0568780060A160 /* Debug */,
@@ -336,7 +336,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "AntiRSICounter" */ = {
+		285A43202B0568780060A160 /* Build configuration list for PBXNativeTarget "InputCounter" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				285A43212B0568780060A160 /* Debug */,
