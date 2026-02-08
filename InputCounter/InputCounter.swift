@@ -519,11 +519,11 @@ struct HistoryPopoverView: View {
     }
 
     private func privacyDisclaimerText() -> String {
-        return "This app only keeps keystroke and mouse click counters locally. It does not know which keys are pressed. No data is collected or transmitted through the network. The code is open source and can be reviewed by anyone for transparency."
+        return "This app only stores local counts of keystrokes and mouse clicks. It does not record which keys are pressed and does not collect or transmit any data. The code is open source for transparency."
     }
 
     private func generalDisclaimerText() -> String {
-        return "This app provides activity metrics for informational purposes only. It is not a medical device and should not be used for medical diagnosis or treatment. Always consult with a qualified healthcare professional for any medical concerns."
+        return "This app provides informational activity metrics only. It is not a medical device and should not be used for diagnosis or treatment. Consult a qualified healthcare professional for medical concerns."
     }
 }
 
