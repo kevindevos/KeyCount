@@ -38,6 +38,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
     let historyDataFileName = "keycount_history.json"
     
+    // Shared date formatter for performance
+    private static let sharedDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+    
     var currentDate: String;
     
     @Published var keystrokeCount: Int 
@@ -80,11 +87,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func getCurrentDate() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        return dateFormatter.string(from: Date())
+        return AppDelegate.sharedDateFormatter.string(from: Date())
     }
     
+    func getCurrentDate(from date: Date) -> String {
+        return AppDelegate.sharedDateFormatter.string(from: date)
+    }
 
     func getHistoryFilePath() -> String {
         let appSupportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -543,12 +551,6 @@ struct HistoryPopoverView: View {
     @State private var keystrokes = 0
     @State private var mouseClicks = 0
 
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Input Counter")
@@ -574,7 +576,7 @@ struct HistoryPopoverView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 Button("Quit") {
-                    NSApplication.shared.terminate(nil)
+                    appDelegate.terminateApp()
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
             }
@@ -616,7 +618,7 @@ struct HistoryPopoverView: View {
     }
 
     private func loadCounts(for date: Date) {
-        let key = dateFormatter.string(from: date)
+        let key = appDelegate.getCurrentDate(from: date)
         let history = appDelegate.readHistoryJson()
         if let entry = history[key] {
             keystrokes = entry.keystrokesCount
@@ -628,8 +630,8 @@ struct HistoryPopoverView: View {
     }
 
     private func isToday(_ date: Date) -> Bool {
-        let today = dateFormatter.string(from: Date())
-        let selected = dateFormatter.string(from: date)
+        let today = appDelegate.getCurrentDate()
+        let selected = appDelegate.getCurrentDate(from: date)
         return today == selected
     }
 
