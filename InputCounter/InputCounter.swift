@@ -48,6 +48,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private let historyQueue = DispatchQueue(label: "com.keycount.history", qos: .utility)
     var menu: ApplicationMenu!
     private let popover = NSPopover()
+    private var exportWindow: NSWindow?
+    private var popoverMonitor: Any?
 
     override init() {
         self.keystrokeCount = 0;
@@ -151,7 +153,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
 
     func setupPopover() {
-        popover.behavior = .transient
+        popover.behavior = .semitransient
         let maxWidth: CGFloat = 160
         let rootView = HistoryPopoverView(appDelegate: self).frame(width: maxWidth)
         let controller = NSHostingController(rootView: rootView)
@@ -160,6 +162,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         controller.view.layoutSubtreeIfNeeded()
         let targetHeight = controller.view.fittingSize.height
         popover.contentSize = NSSize(width: maxWidth, height: targetHeight)
+    }
+
+    func showExportWindow(jsonString: String) {
+        let exportView = ExportJsonView(jsonString: jsonString, onClose: { [weak self] in
+            self?.exportWindow?.close()
+            self?.exportWindow = nil
+        })
+        
+        let hostingController = NSHostingController(rootView: exportView)
+        
+        let window = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 400),
+            styleMask: [.titled, .closable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Export History"
+        window.contentViewController = hostingController
+        window.isFloatingPanel = true
+        window.level = .floating
+        window.hidesOnDeactivate = false
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        
+        // Close on outside click by monitoring click events
+        NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak window] event in
+            if let window = window, window.isVisible {
+                let windowFrame = window.frame
+                let clickLocation = NSEvent.mouseLocation
+                if !windowFrame.contains(clickLocation) {
+                    window.close()
+                }
+            }
+            return event
+        }
+        
+        exportWindow = window
     }
 
     @objc func handleStatusItemClick() {
@@ -171,9 +210,41 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
 
         if popover.isShown {
-            popover.performClose(nil)
+            closePopover()
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            startMonitoringPopoverClicks()
+        }
+    }
+
+    func startMonitoringPopoverClicks() {
+        popoverMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            guard let self = self else { return }
+            guard self.popover.isShown else { return }
+            
+            // Don't close if clicking in export window
+            if let exportWindow = self.exportWindow, exportWindow.isVisible {
+                let clickLocation = NSEvent.mouseLocation
+                if exportWindow.frame.contains(clickLocation) {
+                    return
+                }
+            }
+            
+            // Check if click is outside popover
+            if let popoverWindow = self.popover.contentViewController?.view.window {
+                let clickLocation = NSEvent.mouseLocation
+                if !popoverWindow.frame.contains(clickLocation) {
+                    self.closePopover()
+                }
+            }
+        }
+    }
+
+    func closePopover() {
+        popover.performClose(nil)
+        if let monitor = popoverMonitor {
+            NSEvent.removeMonitor(monitor)
+            popoverMonitor = nil
         }
     }
     
@@ -390,6 +461,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         if let source = runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes)
         }
+        if let monitor = popoverMonitor {
+            NSEvent.removeMonitor(monitor)
+            popoverMonitor = nil
+        }
         NSApplication.shared.terminate(self)
     }
 }
@@ -427,8 +502,6 @@ struct HistoryPopoverView: View {
     @State private var selectedDate = Date()
     @State private var keystrokes = 0
     @State private var mouseClicks = 0
-    @State private var showExportSheet = false
-    @State private var exportJson = ""
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -500,9 +573,6 @@ struct HistoryPopoverView: View {
                 mouseClicks = newCount
             }
         }
-        .sheet(isPresented: $showExportSheet) {
-            ExportJsonView(jsonString: $exportJson, isPresented: $showExportSheet)
-        }
     }
 
     private func loadCounts(for date: Date) {
@@ -527,13 +597,14 @@ struct HistoryPopoverView: View {
         let history = appDelegate.readHistoryJson()
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let jsonString: String
         do {
             let data = try encoder.encode(history)
-            exportJson = String(data: data, encoding: .utf8) ?? "Error encoding JSON"
+            jsonString = String(data: data, encoding: .utf8) ?? "Error encoding JSON"
         } catch {
-            exportJson = "Error: \(error.localizedDescription)"
+            jsonString = "Error: \(error.localizedDescription)"
         }
-        showExportSheet = true
+        appDelegate.showExportWindow(jsonString: jsonString)
     }
 
     private func appVersionText() -> String {
@@ -552,8 +623,8 @@ struct HistoryPopoverView: View {
 }
 
 struct ExportJsonView: View {
-    @Binding var jsonString: String
-    @Binding var isPresented: Bool
+    let jsonString: String
+    let onClose: () -> Void
 
     var body: some View {
         VStack(spacing: 12) {
@@ -575,7 +646,7 @@ struct ExportJsonView: View {
                     NSPasteboard.general.setString(jsonString, forType: .string)
                 }
                 Button("Close") {
-                    isPresented = false
+                    onClose()
                 }
             }
         }
