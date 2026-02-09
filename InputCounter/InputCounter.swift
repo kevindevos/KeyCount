@@ -45,7 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         return formatter
     }()
     
-    var currentDate: String;
+    var currentDate: Date;
     
     @Published var keystrokeCount: Int 
     @Published var mouseclickCount: Int
@@ -62,13 +62,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     override init() {
         self.keystrokeCount = 0;
         self.mouseclickCount = 0;
-        self.currentDate = "";
+        self.currentDate = Calendar.current.startOfDay(for: Date())
         
         super.init()
 
-        // get current date
-        self.currentDate = getCurrentDate();
-        
         // load entry data from current date if exists
         let todayEntry = getTodayEntry();
         self.keystrokeCount = todayEntry.keystrokesCount;
@@ -77,7 +74,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     
     func getTodayEntry() -> HistoryEntry {
         let history = readHistoryJson();
-        let currentDateKey: String = getCurrentDate()
+        let currentDateKey: String = getCurrentDateStr()
         
         if (history[currentDateKey] != nil) {
             return history[currentDateKey]!;
@@ -86,11 +83,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         }
     }
 
-    func getCurrentDate() -> String {
+    func getCurrentDateStr() -> String {
         return AppDelegate.sharedDateFormatter.string(from: Date())
     }
     
-    func getCurrentDate(from date: Date) -> String {
+    func getCurrentDateStr(from date: Date) -> String {
         return AppDelegate.sharedDateFormatter.string(from: date)
     }
 
@@ -297,7 +294,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func updateHistoryJson() {
         var history = readHistoryJson();
         
-        let currentDateKey = getCurrentDate();
+        let currentDateKey = getCurrentDateStr(from: self.currentDate)
 
         // create today's entry
         let todayEntry = HistoryEntry(keystrokesCount: keystrokeCount, mouseClicksCount: mouseclickCount);
@@ -374,13 +371,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     }
     
     func ensureTodayCounters() {
-        let date = getCurrentDate()
+        let today = Date()
         
-        if (self.currentDate != date) {
+        if !Calendar.current.isDate(self.currentDate, inSameDayAs: today) {
             // Save yesterday's counts before switching to new day
             updateHistoryJson()
             
-            self.currentDate = date
+            self.currentDate = Calendar.current.startOfDay(for: today)
             
             let entry = getTodayEntry()
             self.keystrokeCount = entry.keystrokesCount
@@ -425,7 +422,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     func updateHistoryJsonAsync() {
         let keystrokes = keystrokeCount
         let mouseClicks = mouseclickCount
-        let currentDateKey = getCurrentDate()
+        let currentDateKey = getCurrentDateStr(from: self.currentDate)
         var history = self.readHistoryJson()
         history[currentDateKey] = HistoryEntry(keystrokesCount: keystrokes, mouseClicksCount: mouseClicks)
         self.saveHistoryJson(data: history)
@@ -618,7 +615,7 @@ struct HistoryPopoverView: View {
     }
 
     private func loadCounts(for date: Date) {
-        let key = appDelegate.getCurrentDate(from: date)
+        let key = appDelegate.getCurrentDateStr(from: date)
         let history = appDelegate.readHistoryJson()
         if let entry = history[key] {
             keystrokes = entry.keystrokesCount
@@ -630,8 +627,8 @@ struct HistoryPopoverView: View {
     }
 
     private func isToday(_ date: Date) -> Bool {
-        let today = appDelegate.getCurrentDate()
-        let selected = appDelegate.getCurrentDate(from: date)
+        let today = appDelegate.getCurrentDateStr()
+        let selected = appDelegate.getCurrentDateStr(from: date)
         return today == selected
     }
 
